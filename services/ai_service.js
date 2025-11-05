@@ -15,6 +15,7 @@ function atualizarContexto(channelId, autor, mensagem) {
     conversationHistory.set(channelId, []);
   }
   const hist = conversationHistory.get(channelId);
+
   hist.push(`${autor}: ${mensagem}`);
   if (hist.length > MAX_HISTORY) hist.shift();
   return hist.join("\n");

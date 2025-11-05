@@ -1,6 +1,8 @@
 /* eslint-disable indent */
 const fs = require("fs");
 const { gerarResposta, atualizarContexto } = require("./services/ai_service");
+const { canalAtual } = require("./commands/utility/autorizar");
+
 
 const { Client, GatewayIntentBits, Events } = require("discord.js");
 
@@ -36,8 +38,11 @@ for (const file of comandosArquivos) {
 
 // Evento de interação
 clientDiscord.on("messageCreate", async (message) => {
+  console.log("Recebi mensagem de", message.author.username, "no canal:", message.channel.name, "->", message.content);
+
   // Ignora bots
-  if (message.author.bot) return;
+  //if (message.author.bot) return;
+  if (message.author.bot || message.author.id === clientDiscord.user.id) return; // Se for bot e ela mesma, ignora
 
   const args = message.content.slice(prefixo.length).trim().split(/ +/);
   const comandoNome = args.shift().toLowerCase();
@@ -58,19 +63,11 @@ clientDiscord.on("messageCreate", async (message) => {
   // === IA DA ALICE AQUI ===
 
   if (message.content.length > 200) return; // ignora mensagens muito longas
-  //if (canal_autorizado && message.channel.id !== canal_autorizado) return; // ignora canais não autorizados (implementar depois)
+  if (message.content.startsWith(prefixo)) return; // ignora comandos
+  if (canalAtual() && message.channel.id !== canalAtual() && message.channel.name === 'alice') return; // ignora canais não autorizados (implementar depois)
 
-  atualizarContexto(
-    message.channel.id,
-    message.author.username,
-    message.content
-  );
   try {
-    const resposta = await gerarResposta(
-      message.channel.id,
-      message.author.id,
-      message.content,
-      message.attachments
+    const resposta = await gerarResposta(message.channel.id,message.author.id,message.content,message.attachments
     );
     message.reply(resposta);
   } catch (error) {
