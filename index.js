@@ -1,16 +1,17 @@
 /* eslint-disable indent */
-const fs = require("fs");
+const fs = require("fs"); 
 const { gerarResposta, atualizarContexto } = require("./services/ai_service");
 const { canalAtual } = require("./commands/utility/autorizar");
-
-
 const { Client, GatewayIntentBits, Events } = require("discord.js");
+const { falar } = require("./services/tts_service");
 
 const clientDiscord = new Client({
   intents: [
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.MessageContent,
+    GatewayIntentBits.GuildMembers, 
+    GatewayIntentBits.GuildVoiceStates,
   ],
 });
 
@@ -70,6 +71,16 @@ clientDiscord.on("messageCreate", async (message) => {
     const resposta = await gerarResposta(message.channel.id,message.author.id,message.content,message.attachments
     );
     message.reply(resposta);
+
+
+    // FALAR CASO ESTÁ NA CALL 
+    const voiceChannel = message.member.voice.channel;
+
+    falar(resposta, voiceChannel);
+    /*if (message.guild.members.me.voice.channel) {
+        
+    }*/
+
   } catch (error) {
     console.error("[ERRO] ao gerar resposta da Alice: ", error);
     message.reply(

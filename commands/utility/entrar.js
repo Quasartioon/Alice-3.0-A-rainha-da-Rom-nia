@@ -18,6 +18,7 @@ module.exports = {
         joinVoiceChannel({
           channelId: userVoiceOn.id,
           guildId: userVoiceOn.guild.id,
+          self_mute: true,
           adapterCreator: userVoiceOn.guild.voiceAdapterCreator,
         });
     }else{
