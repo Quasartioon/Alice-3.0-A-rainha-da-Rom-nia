@@ -27,7 +27,7 @@ if (!fs.existsSync(tempFolder)) {
 // ========== GERAR ÁUDIO ==========
 async function gerarAudio(texto) {
   console.log("[LOG] Gerando áudio ElevenLabs...");
-
+  texto = String(texto);
   const stream = await elevenlabs.textToSpeech.convert(VOZ_ID, {
     text: texto,
     modelId: MODELO,
@@ -53,60 +53,30 @@ async function gerarAudio(texto) {
 
   return filePath;
 }
-
+let player;
 // ========== TOCAR ÁUDIO ==========
 async function falar(texto, voiceChannel) {
-  if (!voiceChannel) {
-    console.log("[ERRO] Usuário NÃO está em call.");
-    return;
-  }
-
-  console.log("[LOG] Usuário está na call:", voiceChannel.name);
-
-  let connection = getVoiceConnection(voiceChannel.guild.id);
+  if(!voiceChannel) return;
   
-  if (!connection) {
-    console.log("[LOG] Bot NÃO estava na call, conectando...");
-    connection = joinVoiceChannel({
-      channelId: voiceChannel.id,
-      guildId: voiceChannel.guild.id,
-      adapterCreator: voiceChannel.guild.voiceAdapterCreator
-    });
-  } else {
-    console.log("[LOG] Bot já está na call.");
-  }
-
+  texto = String(texto);
+  let connection = getVoiceConnection(voiceChannel.guild.id);
+  if (!connection) return;
+ 
   const filePath = await gerarAudio(texto);
 
-  console.log("[LOG] Criando AudioResource...");
-  let resource;
-  try {
-    resource = createAudioResource(filePath, {inputType: 'arbitrary'});
-  } catch (err) {
-    console.error("[ERRO] createAudioResource falhou:", err);
-    return;
-  }
-
-  console.log("[LOG] Criando AudioPlayer...");
-  const player = createAudioPlayer();
-
-  player.on("stateChange", (oldState, newState) => {
-    console.log(`[AUDIO] Estado: ${oldState.status} -> ${newState.status}`);
-  });
-
+  const resource = createAudioResource(filePath);
+  player = createAudioPlayer();
+  connection.subscribe(player);
   player.on("error", (error) => {
     console.error("[AUDIO ERRO]:", error);
   });
-
-  console.log("[LOG] Dando play...");
   player.play(resource);
 
-  console.log("[LOG] Inscrevendo conexão...");
-  connection.subscribe(player);
-
-  player.on(AudioPlayerStatus.Idle, () => {
-    console.log("[LOG] Áudio terminou, apagando arquivo:", filePath);
-    if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+  return new Promise(resolve => {
+    player.once(AudioPlayerStatus.Idle, () => {
+      if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+      resolve();
+    });
   });
 }
 

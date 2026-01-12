@@ -1,6 +1,6 @@
 /* eslint-disable indent */
 const fs = require("fs"); 
-const { gerarResposta, atualizarContexto } = require("./services/ai_service");
+const { gerarResposta } = require("./services/ai_service");
 const { canalAtual } = require("./commands/utility/autorizar");
 const { Client, GatewayIntentBits, Events } = require("discord.js");
 const { falar } = require("./services/tts_service");
@@ -68,18 +68,22 @@ clientDiscord.on("messageCreate", async (message) => {
   if (canalAtual() && message.channel.id !== canalAtual() && message.channel.name === 'alice') return; // ignora canais não autorizados (implementar depois)
 
   try {
-    const resposta = await gerarResposta(message.channel.id,message.author.id,message.content,message.attachments
+    const resposta = await gerarResposta(
+      message.channel.id, 
+      message.author.id,
+      message.author.username,
+      message.content,
+      message.attachments
     );
     message.reply(resposta);
 
 
     // FALAR CASO ESTÁ NA CALL 
     const voiceChannel = message.member.voice.channel;
+    if (voiceChannel) {
+      falar(resposta, voiceChannel);
+    }
 
-    falar(resposta, voiceChannel);
-    /*if (message.guild.members.me.voice.channel) {
-        
-    }*/
 
   } catch (error) {
     console.error("[ERRO] ao gerar resposta da Alice: ", error);
@@ -88,4 +92,5 @@ clientDiscord.on("messageCreate", async (message) => {
     );
   }
 });
+
 clientDiscord.login(token);

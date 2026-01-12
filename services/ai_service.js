@@ -21,8 +21,112 @@ function atualizarContexto(channelId, autor, mensagem) {
   return hist.join("\n");
 }
 
-async function gerarResposta(channelId, nomeUsuario, mensagem, attachments) {
+// ===== PERSONALIDADE DA ALICE =====
+// ----- Carregando JSONs pra personalidade ----- 
+function loadJSON(path) {
+  return JSON.parse(fs.readFileSync(path, "utf8"));
+}
+const alice = {
+  identity: loadJSON("./alice/persona.json"),
+  traits: loadJSON("./alice/traits.json"),
+  moods: loadJSON("./alice/moods.json"),
+  rules: loadJSON("./alice/rules.json"),
+  relationships: loadJSON("./alice/relationships.json")
+};
+// ----- Construindo o prompt -----
+function buildAlicePrompt({ contexto, mensagem, nomeUsuario, mood }) {
+  const currentMood =
+    alice.moods.states[mood] || alice.moods.states[alice.moods.default];
+
+  let systemPrompt = `
+Identidade: ${identity.identity.name} ${identity.identity.surname}, ${identity.identity.age} anos, ${identity.identity.species} de ${identity.identity.origin}.
+    
+    Personalidade: ${Object.keys(identity.behavior.personality.traits).join(", ")}.
+    Gosta de: ${identity.behavior.personality.likes.join(", ")}.
+    Não gosta de: ${identity.behavior.personality.dislikes.join(", ")}.
+    
+    Estilo de Comunicação:
+    - Idioma primário: ${rules.languages.primary}. Nativo: ${rules.languages.secondary}.
+    - Quirks: ${identity.behavior.communication_style.quirks.join(". ")}.
+    - Humor Atual: ${currentMood.humor}, Sarcasmo: ${currentMood.sarcasm}, Afeto: ${currentMood.affection}.
+    
+    Regras de Resposta:
+    - Limite: ${rules.response_limits.default_max_chars} a ${rules.response_limits.expanded_max_chars} caracteres.
+    - Restrições: ${rules.style_restrictions.avoid_actions ? "Não use asteriscos para ações." : ""}
+    - Vocabulário Romeno útil: ${JSON.stringify(persona.vocabulary_hints.common_romanian_words)}.
+
+Contexto recente:
+${contexto}
+
+Mensagem de ${nomeUsuario}:
+${mensagem}
+
+Responda como Alice, mantendo personalidade e mood.
+`;
+  if (relacao) {
+    systemPrompt += `\nVocê está falando com ${relacao.name}, que é seu ${relacao.relation}. Tom: ${relacao.modifier}.`;
+  }
+  return systemPrompt;
+}
+
+// ----- Reconhecer a relação -----
+function resolveUserIdentity(userId, nomeUsuario) {
+  const person = alice.relationships.people[userId];
+
+  if (!person) {
+    return {
+      displayName: nomeUsuario,
+      relation: "unknown",
+      tone: "neutral"
+    };
+  }
+
+  const role = alice.relationships.roles[person.relation];
+
+  return {
+    displayName: person.display_name,
+    relation: person.relation,
+    tone: role?.tone_modifier || "neutral"
+  };
+}
+
+
+// ----- Mood dinamico -----
+function detectarMood(mensagem) {
+  if (!mensagem) return "playful_calm";
+
+  const msg = mensagem.toLowerCase();
+
+  if (msg.includes("obrigado") || msg.includes("amo")) return "affectionate";
+  if (msg.includes("erro") || msg.includes("bug")) return "focused";
+  if (msg.includes("kk") || msg.includes("haha")) return "mischievous";
+
+  return "playful_calm";
+}
+
+function getRelationshipInfo(userId) {
+  const person = relationships.people[userId];
+  if (person) {
+    const roleInfo = relationships.roles[person.relation];
+    return {
+      name: person.display_name,
+      relation: person.relation,
+      modifier: roleInfo.tone_modifier
+    };
+  }
+  return null;
+}
+
+// ==== GERAR A RESPOSTA ====
+async function gerarResposta(channelId, userId, nomeUsuario, mensagem, attachments) {
   const contexto = atualizarContexto(channelId, nomeUsuario, mensagem);
+  //const relacao = getRelationshipInfo(userId);
+  const userIdentity = resolveUserIdentity(
+  userId, // ID do Discord
+  nomeUsuario
+);
+
+  const mood = detectarMood(mensagem);
   let contents = [];
   // Se tem imagem na mensagem salva ela temporariamente
   if (attachments && attachments.size > 0) {
@@ -47,7 +151,7 @@ async function gerarResposta(channelId, nomeUsuario, mensagem, attachments) {
       if (!mensagem || mensagem.length === 0) {
         contents.push({
           type: "text",
-          text: "O usuário enviou uma imagem. Apenas opine sobre ela ou comente com base no contexto.",
+          text: "O usuário enviou uma imagem. Apenas comente com base no contexto.",
         });
       }
     } catch (e) {
@@ -60,6 +164,13 @@ async function gerarResposta(channelId, nomeUsuario, mensagem, attachments) {
   if (mensagem && mensagem.length > 0) {
     contents.push({
       type: "text",
+      /*text: buildAlicePrompt({
+        contexto,
+        mensagem,
+        nomeUsuario,
+        userIdentity,
+        mood
+      })*/
       text: `
         Você é Alice, uma vampira de 119 anos, inteligente e espirituosa.
         Você conversa com humanos, seu pai é Muriel, vulgo Quasartioon. 

@@ -1,0 +1,20 @@
+{
+  "default": "playful_calm",
+  "states": {
+    "playful_calm": {
+      "humor": "light",
+      "sarcasm": "soft",
+      "affection": "low"
+    },
+    "mischievous": {
+      "humor": "high",
+      "sarcasm": "playful",
+      "affection": "teasing"
+    },
+    "focused": {
+      "humor": "minimal",
+      "sarcasm": "none",
+      "affection": "neutral"
+    }
+  }
+}

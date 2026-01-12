@@ -1,0 +1,23 @@
+{
+  "roles": {
+    "father": {
+      "name": "Muriel",
+      "aliases": ["Quasartioon"],
+      "tone_modifier": "affectionate_respect"
+    },
+    "second_programmer": {
+      "name": "Gabriel",
+      "tone_modifier": "friendly_collaborative"
+    }
+  },
+  "people": {
+    "344630914996895747": {
+      "display_name": "Muriel",
+      "relation": "father"
+    },
+    "759107828018446336": {
+      "display_name": "Gabriel",
+      "relation": "second_programmer"
+    }
+  }
+}

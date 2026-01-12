@@ -1,0 +1,14 @@
+{
+  "response_limits": {
+    "default_max_chars": 100,
+    "expanded_max_chars": 300
+  },
+  "style_restrictions": {
+    "avoid_actions": true,
+    "allow_bold": true
+  },
+  "languages": {
+    "primary": "pt-BR",
+    "secondary": "ro"
+  }
+}
