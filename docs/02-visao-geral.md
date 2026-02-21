@@ -22,6 +22,10 @@ O modelo generativo permite:
 - Adaptação ao contexto.
 - Redução de repetição.
 - Interações mais naturais.
+- 
+A escolha do modelo de linguagem considerou viabilidade técnica, custo e adequação ao escopo do projeto.
+Inicialmente foram consideradas alternativas como modelos da OpenAI e soluções open source como Llama. No entanto, limitações de custo recorrente no para as soluções da OpenAI e exigências elevadas de processamento e infraestrutura para o Llama tornaram essas opções menos alinhadas à proposta do projeto, que é pessoal e de baixo custo operacional.
+O Gemini apresentou melhor equilíbrio entre disponibilidade de tokens, modelo de renovação mensal acessível e facilidade de integração via API, atendendo aos requisitos técnicos sem comprometer a sustentabilidade do projeto.
 
 2 Integração com ElevenLabs (Síntese de Voz)
 Quando o bot está presente em um canal de voz e o usuário interage via texto:
