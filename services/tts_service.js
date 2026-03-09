@@ -13,8 +13,12 @@ const { ElevenLabsClient } = require("@elevenlabs/elevenlabs-js");
 const elevenlabs = new ElevenLabsClient({
   apiKey: process.env.ELEVEN_LABS_TOKEN
 });
+//id da voz antiga (Keren)
+//const VOZ_ID_antiga = "33B4UnXyTNbgLmdEDh5P"; 
 
-const VOZ_ID = "33B4UnXyTNbgLmdEDh5P";
+// id voz Jessica
+const VOZ_ID = "cgSgspJ2msm6clMCkdW9"; 
+
 const MODELO = "eleven_multilingual_v2";
 
 // ========== PASTA TEMP ==========
