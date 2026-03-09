@@ -1,5 +1,15 @@
-# Alice 3.0 A rainha da Romênia
-Bot do Discord desenvolvido a fins de entrenenimento, experimentação com Inteligência Artificial generativa e integração de APIs.
+# Alice 3.0 - Discord AI bot
+Chamamos de Alice, a Rainha da Romênia 🇷🇴.
+Bot para Discord focado em entretenimento e experimentação com Inteligência Artificial Generativa,
+utilizando integração com a API Gemini (Google Generative AI).
+
+# ❓O projeto explora:
+- Engenharia de Prompt
+- Arquitetura modular para bots
+- Integração com APIs externas
+- Processamento assíncrono em Node.js
+
+Para mais informações acesse docs/ que lá terá a documentação do projeto.
 
 # 📌 Status
 Projeto pessoal em constante evolução 🚧
