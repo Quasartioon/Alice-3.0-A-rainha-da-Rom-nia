@@ -1,7 +1,7 @@
 /* eslint-disable indent */
 const fs = require("fs"); 
 const { gerarResposta } = require("./services/ai_service");
-const  autorizar = require("./commands/utility/autorizar");
+const autorizar = require("./commands/utility/autorizar");
 const { Client, GatewayIntentBits, Events } = require("discord.js");
 const { falar } = require("./services/tts_service");
 
@@ -38,6 +38,19 @@ for (const file of comandosArquivos) {
 }
 
 // Evento de interação
+clientDiscord.on(Events.InteractionCreate, async interaction => {
+	if (!interaction.isChatInput()) return;
+
+	const command = interaction.client.commands.get(interaction.commandName);
+	if (!command) return;
+
+	try {
+		await command.execute(interaction);
+	} catch (error) {
+		console.error(error);
+		await interaction.reply({ content: 'Erro ao executar comando!', ephemeral: true });
+	}
+});
 clientDiscord.on("messageCreate", async (message) => {
   console.log("Recebi mensagem de", message.author.username, "no canal:", message.channel.name, "->", message.content);
 
@@ -61,25 +74,10 @@ clientDiscord.on("messageCreate", async (message) => {
     }
   }
 
-});
-  clientDiscord.on(Events.InteractionCreate, async interaction => {
-	if (!interaction.isChatInput()) return;
-
-	const command = interaction.client.commands.get(interaction.commandName);
-	if (!command) return;
-
-	try {
-		await command.execute(interaction);
-	} catch (error) {
-		console.error(error);
-		await interaction.reply({ content: 'Erro ao executar comando!', ephemeral: true });
-	}
-
   // === IA DA ALICE AQUI ===
 
   if (message.content.length > 200) return; // ignora mensagens muito longas
   if (message.content.startsWith(prefixo)) return; // ignora comandos
-  
   if (!autorizar.canalAtual()) return;
   if (message.channel.id !== autorizar.canalAtual()) return;
 
