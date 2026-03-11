@@ -1,4 +1,4 @@
-# Alice 3.0 - Discord AI bot
+# Alice 3.0 - AI Discord bot
 Chamamos de Alice, a Rainha da Romênia 🇷🇴.
 Bot para Discord focado em entretenimento e experimentação com Inteligência Artificial Generativa,
 utilizando integração com a API Gemini (Google Generative AI).

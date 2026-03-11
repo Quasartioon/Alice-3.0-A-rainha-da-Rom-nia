@@ -60,12 +60,27 @@ clientDiscord.on("messageCreate", async (message) => {
       message.reply("Houve um erro ao executar esse comando!");
     }
   }
+  // ==== Comandos Slash ===
+  clientDiscord.on(Events.InteractionCreate, async interaction => {
+	if (!interaction.isChatInput()) return;
+
+	const command = interaction.client.commands.get(interaction.commandName);
+	if (!command) return;
+
+	try {
+		await command.execute(interaction);
+	} catch (error) {
+		console.error(error);
+		await interaction.reply({ content: 'Erro ao executar comando!', ephemeral: true });
+	}
+});
 
   // === IA DA ALICE AQUI ===
 
   if (message.content.length > 200) return; // ignora mensagens muito longas
   if (message.content.startsWith(prefixo)) return; // ignora comandos
-  if (canalAtual() && message.channel.id !== canalAtual() && message.channel.name === 'alice') return; // ignora canais não autorizados (implementar depois)
+  if (!canalAtual()) return; 
+  if (message.channel.id !== canalAtual()) return;
 
   try {
     const resposta = await gerarResposta(
