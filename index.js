@@ -1,7 +1,7 @@
 /* eslint-disable indent */
 const fs = require("fs"); 
 const { gerarResposta } = require("./services/ai_service");
-const { canalAtual } = require("./commands/utility/autorizar");
+const  autorizar = require("./commands/utility/autorizar");
 const { Client, GatewayIntentBits, Events } = require("discord.js");
 const { falar } = require("./services/tts_service");
 
@@ -60,7 +60,8 @@ clientDiscord.on("messageCreate", async (message) => {
       message.reply("Houve um erro ao executar esse comando!");
     }
   }
-  // ==== Comandos Slash ===
+
+});
   clientDiscord.on(Events.InteractionCreate, async interaction => {
 	if (!interaction.isChatInput()) return;
 
@@ -73,14 +74,14 @@ clientDiscord.on("messageCreate", async (message) => {
 		console.error(error);
 		await interaction.reply({ content: 'Erro ao executar comando!', ephemeral: true });
 	}
-});
 
   // === IA DA ALICE AQUI ===
 
   if (message.content.length > 200) return; // ignora mensagens muito longas
   if (message.content.startsWith(prefixo)) return; // ignora comandos
-  if (!canalAtual()) return; 
-  if (message.channel.id !== canalAtual()) return;
+  
+  if (!autorizar.canalAtual()) return;
+  if (message.channel.id !== autorizar.canalAtual()) return;
 
   try {
     const resposta = await gerarResposta(

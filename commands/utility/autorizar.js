@@ -1,5 +1,5 @@
 const { SlashCommandBuilder } = require('discord.js');
-let canal = "923121181975007232"
+let canal = null;
 
 module.exports = {
     data: new SlashCommandBuilder().setName('autorizar').setDescription('Comando de definir canal de conversa da Alice.'),
