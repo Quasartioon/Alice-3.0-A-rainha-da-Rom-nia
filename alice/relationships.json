@@ -1,7 +1,8 @@
 {
   "roles": {
     "father": {
-      "name": "Muriel",
+      "name": "Muryel",
+      "surname": "D' Paula",
       "aliases": ["Quasartioon"],
       "tone_modifier": "affectionate_respect"
     },

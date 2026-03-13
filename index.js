@@ -84,10 +84,10 @@ clientDiscord.on("messageCreate", async (message) => {
   try {
     const resposta = await gerarResposta(
       message.channel.id, 
-      message.author.id,
       message.author.username,
       message.content,
-      message.attachments
+      message.attachments,
+      message.author.id
     );
     message.reply(resposta);
 

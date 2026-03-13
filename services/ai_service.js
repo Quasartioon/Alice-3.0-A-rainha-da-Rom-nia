@@ -33,100 +33,38 @@ const alice = {
   rules: loadJSON("./alice/rules.json"),
   relationships: loadJSON("./alice/relationships.json")
 };
-// ----- Construindo o prompt -----
-function buildAlicePrompt({ contexto, mensagem, nomeUsuario, mood }) {
-  const currentMood =
-    alice.moods.states[mood] || alice.moods.states[alice.moods.default];
 
-  let systemPrompt = `
-Identidade: ${identity.identity.name} ${identity.identity.surname}, ${identity.identity.age} anos, ${identity.identity.species} de ${identity.identity.origin}.
+function buildPrompt(userId) {
+  const rs = alice.relationships.people[userId] || { display_name: "Humano", relation: "conhecido" };
+  const vocabulo = alice.identity.vocabulary_hints?.common_romanian_words || {};
+
+  return `
+    Você é ${alice.identity.identity.name} ${alice.identity.identity.surname}, uma ${alice.identity.identity.species} de ${alice.identity.identity.age} anos vinda da ${alice.identity.identity.origin}.
     
-    Personalidade: ${Object.keys(identity.behavior.personality.traits).join(", ")}.
-    Gosta de: ${identity.behavior.personality.likes.join(", ")}.
-    Não gosta de: ${identity.behavior.personality.dislikes.join(", ")}.
+    PERSONALIDADE:
+    - Traços: ${Object.keys(alice.identity.behavior.personality.traits).join(", ")}.
+    - Gosta de: ${alice.identity.behavior.personality.likes.join(", ")}.
+    - Odeia: ${alice.identity.behavior.personality.dislikes.join(", ")}.
     
-    Estilo de Comunicação:
-    - Idioma primário: ${rules.languages.primary}. Nativo: ${rules.languages.secondary}.
-    - Quirks: ${identity.behavior.communication_style.quirks.join(". ")}.
-    - Humor Atual: ${currentMood.humor}, Sarcasmo: ${currentMood.sarcasm}, Afeto: ${currentMood.affection}.
+    COMUNICAÇÃO:
+    - Idioma principal: ${alice.identity.behavior.communication_style.primary_language}.
+    - Termos em Romeno para usar: ${JSON.stringify(vocabulo)}.
+    - Estilo: ${alice.identity.behavior.communication_style.quirks.join(". ")}.
+    - Limite de resposta: ${alice.rules.response_limits.expanded_max_chars} caracteres.
     
-    Regras de Resposta:
-    - Limite: ${rules.response_limits.default_max_chars} a ${rules.response_limits.expanded_max_chars} caracteres.
-    - Restrições: ${rules.style_restrictions.avoid_actions ? "Não use asteriscos para ações." : ""}
-    - Vocabulário Romeno útil: ${JSON.stringify(persona.vocabulary_hints.common_romanian_words)}.
+    RELACIONAMENTO ATUAL:
+    - Falando com: ${rs.display_name}.
+    - Sua relação: ${rs.relation}.
+    - Tom de voz: ${alice.relationships.roles[rs.relation]?.tone_modifier || "padrão"}.
 
-Contexto recente:
-${contexto}
-
-Mensagem de ${nomeUsuario}:
-${mensagem}
-
-Responda como Alice, mantendo personalidade e mood.
-`;
-  if (relacao) {
-    systemPrompt += `\nVocê está falando com ${relacao.name}, que é seu ${relacao.relation}. Tom: ${relacao.modifier}.`;
-  }
-  return systemPrompt;
-}
-
-// ----- Reconhecer a relação -----
-function resolveUserIdentity(userId, nomeUsuario) {
-  const person = alice.relationships.people[userId];
-
-  if (!person) {
-    return {
-      displayName: nomeUsuario,
-      relation: "unknown",
-      tone: "neutral"
-    };
-  }
-
-  const role = alice.relationships.roles[person.relation];
-
-  return {
-    displayName: person.display_name,
-    relation: person.relation,
-    tone: role?.tone_modifier || "neutral"
-  };
-}
-
-
-// ----- Mood dinamico -----
-function detectarMood(mensagem) {
-  if (!mensagem) return "playful_calm";
-
-  const msg = mensagem.toLowerCase();
-
-  if (msg.includes("obrigado") || msg.includes("amo")) return "affectionate";
-  if (msg.includes("erro") || msg.includes("bug")) return "focused";
-  if (msg.includes("kk") || msg.includes("haha")) return "mischievous";
-
-  return "playful_calm";
-}
-
-function getRelationshipInfo(userId) {
-  const person = relationships.people[userId];
-  if (person) {
-    const roleInfo = relationships.roles[person.relation];
-    return {
-      name: person.display_name,
-      relation: person.relation,
-      modifier: roleInfo.tone_modifier
-    };
-  }
-  return null;
+    
+  `;
 }
 
 // ==== GERAR A RESPOSTA ====
-async function gerarResposta(channelId, userId, nomeUsuario, mensagem, attachments) {
+async function gerarResposta(channelId, nomeUsuario, mensagem, attachments, userId) {
   const contexto = atualizarContexto(channelId, nomeUsuario, mensagem);
-  //const relacao = getRelationshipInfo(userId);
-  const userIdentity = resolveUserIdentity(
-  userId, // ID do Discord
-  nomeUsuario
-);
 
-  const mood = detectarMood(mensagem);
   let contents = [];
   // Se tem imagem na mensagem salva ela temporariamente
   if (attachments && attachments.size > 0) {
@@ -164,25 +102,10 @@ async function gerarResposta(channelId, userId, nomeUsuario, mensagem, attachmen
   if (mensagem && mensagem.length > 0) {
     contents.push({
       type: "text",
-      /*text: buildAlicePrompt({
-        contexto,
-        mensagem,
-        nomeUsuario,
-        userIdentity,
-        mood
-      })*/
-      text: `
-        Você é Alice, uma vampira de 119 anos, inteligente e espirituosa.
-        Você conversa com humanos, seu pai é Muriel, vulgo Quasartioon. 
-        Você é romena, mas fala português fluentemente. Caso queira brincar, pode soltar palavars ou pequenas frases em romeno.
-        Seu estilo é brincalhão, direto e espirituoso.
-        Uma breve curiosidade: você torce pro Corinthians. Mas não mencione isso constantemente nas conversas a menos que o contexto envolva futebol.
-        Respona o usuário de forma breve, com até 100 caracteres. Caso necessário, expanda para até no máximo 300 caracteres.
-        Evite onomatopeias ou ações entre *asteriscos* ou colchetes, mas pode usar **negrito** para expressar intensidade.
-        Contexto recente da conversa:${contexto}
-        Última mensagem de ${nomeUsuario}: ${mensagem}
-        Responda espirituosamente como Alice:
-        `,
+      text: `${buildPrompt(userId)}
+      Contexto recente: ${contexto}
+      Mensagem de ${nomeUsuario}: ${mensagem}
+      `
     });
   }
 
@@ -190,9 +113,10 @@ async function gerarResposta(channelId, userId, nomeUsuario, mensagem, attachmen
   try {
     const response = await genai.models.generateContent({
       model: model,
+      systemInstruction: `Você é um personagem fictício. Nunca saia do personagem.`,
       contents,
       maxOutputTokens: 300,
-      temperature: 0.7,
+      temperature: 0.7
     });
     const texto =
       response.text?.trim() || "Algo deu errado com meus pensamentos...";
@@ -208,7 +132,7 @@ async function gerarResposta(channelId, userId, nomeUsuario, mensagem, attachmen
     return texto;
   } catch (e) {
     console.error("[ERRO GEMINI]", e);
-    return "Me distraí pensando em sangue... digo, em bytes! Pode repetir?";
+    return "Tive um pequeno blecaute na Transilvânia...";
   }
 }
 
