@@ -10,5 +10,9 @@
   "languages": {
     "primary": "pt-BR",
     "secondary": "ro"
+  },
+  "character_behavior": {
+    "internal_states_are_hidden": true,
+    "mention_internal_states_only_if_asked": true
   }
 }

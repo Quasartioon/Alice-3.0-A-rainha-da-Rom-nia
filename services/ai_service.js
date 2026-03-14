@@ -5,7 +5,7 @@ const axios = require("axios");
 
 const GENAI_API_KEY = process.env.GENAI_API_KEY;
 const genai = new GoogleGenAI({ apiKey: GENAI_API_KEY });
-const model = "gemini-2.5-flash";
+const model = "gemini-2.5-flash-lite";
 
 const MAX_HISTORY = 7;
 const conversationHistory = new Map();
@@ -33,11 +33,52 @@ const alice = {
   rules: loadJSON("./alice/rules.json"),
   relationships: loadJSON("./alice/relationships.json")
 };
+const aliceState = {
+  hunger: 0.3,        // 0 → satisfeita | 1 → faminta
+  mood: "neutra",     // neutra | irritada | animada
+  energy: 0.7
+};
+function aumentarFome(){
+  aliceState.hunger += 0.05;
+  if(aliceState.hunger > 1){
+    aliceState.hunger = 1;
+  }
+}
+function alimentarAlice(mensagem) {
+  const msg = mensagem.toLowerCase();
+
+  if (msg.includes("vinho") && msg.includes("sangue")) {
+    aliceState.hunger = 0.1;
+    return true;
+  }
+
+  return false;
+}
 
 function buildPrompt(userId) {
   const rs = alice.relationships.people[userId] || { display_name: "Humano", relation: "conhecido" };
   const vocabulo = alice.identity.vocabulary_hints?.common_romanian_words || {};
+  const hideInternalStates = alice.rules.character_behavior.internal_states_are_hidden;
+  const hungerStates = [
+  { limit: 0.3, text: "Alice está relaxada e responde de forma espirituosa." },
+  { limit: 0.6, text: "Alice responde com mais sarcasmo e ironia." },
+  { limit: 1, text: "Alice responde com sarcasmo afiado, impaciência e comentários provocativos." }
+];
+  let futebol;
 
+  if (rs.team === "palmeiras") futebol = "Alice acha divertido provocar torcedores do Palmeiras.";
+  const comportamentoFome =
+    hungerStates.find(s => aliceState.hunger < s.limit)?.text;
+
+  let regrasEstado = "";
+
+  if (hideInternalStates) {
+    regrasEstado = `
+Estados internos da personagem (como fome ou humor) influenciam apenas o tom e comportamento.
+Alice não costuma mencionar diretamente esses estados.
+Ela só comenta sobre eles se alguém perguntar explicitamente.
+`;
+  }
   return `
     Você é ${alice.identity.identity.name} ${alice.identity.identity.surname}, uma ${alice.identity.identity.species} de ${alice.identity.identity.age} anos vinda da ${alice.identity.identity.origin}.
     
@@ -57,13 +98,23 @@ function buildPrompt(userId) {
     - Sua relação: ${rs.relation}.
     - Tom de voz: ${alice.relationships.roles[rs.relation]?.tone_modifier || "padrão"}.
 
-    
+    ESTADO ATUAL
+    - Fome: ${Math.round(aliceState.hunger * 100)}%
+    - Comportamento: ${comportamentoFome}.
+    ESTADO EMOCIONAL
+    ${comportamentoFome}
+
+    RIVALIDADE FUTEBOLÍSTICA
+    ${futebol}
+    ${regrasEstado}
   `;
 }
 
 // ==== GERAR A RESPOSTA ====
 async function gerarResposta(channelId, nomeUsuario, mensagem, attachments, userId) {
   const contexto = atualizarContexto(channelId, nomeUsuario, mensagem);
+  aumentarFome();
+  const foiAlimentada = alimentarAlice(mensagem);
 
   let contents = [];
   // Se tem imagem na mensagem salva ela temporariamente
@@ -131,7 +182,11 @@ async function gerarResposta(channelId, nomeUsuario, mensagem, attachments, user
 
     return texto;
   } catch (e) {
-    console.error("[ERRO GEMINI]", e);
+    if (e.status === 429) {
+      console.error("[ERRO GEMNI]: Excedeu a QUOTA", e);
+      return "Minha bateria social esgotou… nos vemos daqui alguns ciclos lunares.";
+    }
+    console.error("[ERRO GEMNI]", e);
     return "Tive um pequeno blecaute na Transilvânia...";
   }
 }

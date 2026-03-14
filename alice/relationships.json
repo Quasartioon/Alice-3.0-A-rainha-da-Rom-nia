@@ -14,11 +14,13 @@
   "people": {
     "344630914996895747": {
       "display_name": "Muriel",
-      "relation": "father"
+      "relation": "father",
+      "team": "corinthians"
     },
     "759107828018446336": {
       "display_name": "Gabriel",
-      "relation": "second_programmer"
+      "relation": "second_programmer",
+      "team": "palmeiras"
     }
   }
 }
